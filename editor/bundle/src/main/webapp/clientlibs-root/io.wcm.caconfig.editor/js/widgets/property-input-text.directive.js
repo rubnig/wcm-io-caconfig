@@ -48,7 +48,7 @@
         scope.pattern = input.pattern;
         scope.required = false;
 
-        if (props) {
+        if (props && !scope.property.inherited && !scope.property.overridden) {
             scope.pattern = props.pattern || scope.pattern;
             scope.required = props.required || scope.required;
         }

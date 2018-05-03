@@ -48,7 +48,7 @@
       scope.i18n = $rootScope.i18n;
       scope.required = false;
 
-      if (props) {
+      if (props && !scope.property.inherited && !scope.property.overridden) {
         scope.required = props.required || scope.required;
       }
 
