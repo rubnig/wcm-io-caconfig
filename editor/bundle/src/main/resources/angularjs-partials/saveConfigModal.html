@@ -17,6 +17,7 @@
     <button class="coral-Button coral-Button--primary" data-dismiss="modal"
             type="button"
             ng-click="saveConfig.saveConfigWithRedirect()"
+            ng-disabled="configForm.$invalid"
             bo-text="i18n.button.save">
     </button>
     <button class="coral-Button coral-Button--secondary"  data-dismiss="modal"
