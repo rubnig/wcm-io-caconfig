@@ -46,6 +46,11 @@
 
       scope.type = input.type;
       scope.i18n = $rootScope.i18n;
+      scope.required = false;
+
+      if (props) {
+        scope.required = props.required || scope.required;
+      }
 
       angular.forEach(props, function (value, prop) {
         var propName;
@@ -57,6 +62,7 @@
         }
       });
 
+      options.required = scope.required;
       // get root path from config
       options.rootPath = options.rootPath || "/content";
       // if rootPathContext is set set root path to current context path

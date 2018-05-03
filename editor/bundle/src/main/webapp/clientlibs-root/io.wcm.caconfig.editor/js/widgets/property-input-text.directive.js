@@ -42,8 +42,16 @@
     return directive;
 
     function link(scope) {
-      var input = inputMap[scope.property.metadata.type];
-      scope.pattern = input.pattern;
+      var input = inputMap[scope.property.metadata.type],
+          props = scope.property.metadata.properties;
+
+        scope.pattern = input.pattern;
+        scope.required = false;
+
+        if (props) {
+            scope.pattern = props.pattern || scope.pattern;
+            scope.required = props.required || scope.required;
+        }
     }
   }
 }(angular));
