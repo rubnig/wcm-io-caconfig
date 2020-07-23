@@ -19,36 +19,41 @@
  */
 package io.wcm.caconfig.editor.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.caconfig.management.ConfigurationCollectionData;
 import org.apache.sling.caconfig.management.ConfigurationData;
 import org.apache.sling.caconfig.management.ConfigurationManager;
 import org.apache.sling.caconfig.resource.ConfigurationResourceResolver;
 import org.apache.sling.caconfig.spi.metadata.ConfigurationMetadata;
 import org.apache.sling.caconfig.spi.metadata.PropertyMetadata;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedSet;
 
-import io.wcm.testing.mock.aem.junit.AemContext;
+import io.wcm.caconfig.editor.ConfigurationEditorFilter;
+import io.wcm.sling.commons.caservice.impl.ContextAwareServiceResolverImpl;
+import io.wcm.testing.mock.aem.junit5.AemContext;
+import io.wcm.testing.mock.aem.junit5.AemContextExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigNamesServletTest {
+@ExtendWith(AemContextExtension.class)
+@ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
+class ConfigNamesServletTest {
 
-  @Rule
-  public AemContext context = new AemContext();
+  private final AemContext context = new AemContext();
 
   @Mock
   private ConfigurationManager configManager;
@@ -57,22 +62,22 @@ public class ConfigNamesServletTest {
   @Mock
   private ConfigurationData configData;
 
-  private ConfigNamesServlet underTest;
+  @BeforeEach
+  void setUp() {
+    context.currentResource(context.create().resource("/content/test"));
 
-  @Before
-  public void setUp() {
     ConfigurationMetadata metadata1 = new ConfigurationMetadata("name1", ImmutableList.<PropertyMetadata<?>>of(), false)
-        .label("label1")
+        .label("B-label1")
         .description("desc1");
-    ConfigurationMetadata metadata2 = new ConfigurationMetadata("name2", ImmutableList.<PropertyMetadata<?>>of(), true);
-    ConfigurationMetadata metadata3 = new ConfigurationMetadata("name3", ImmutableList.<PropertyMetadata<?>>of(), false);
+    ConfigurationMetadata metadata2 = new ConfigurationMetadata("name2", ImmutableList.<PropertyMetadata<?>>of(), true)
+        .label("A-label2");
+    ConfigurationMetadata metadata3 = new ConfigurationMetadata("name3", ImmutableList.<PropertyMetadata<?>>of(), false)
+        .label("C-label3");
 
     when(configManager.getConfigurationNames()).thenReturn(ImmutableSortedSet.of("name1", "name2", "name3"));
     when(configManager.getConfigurationMetadata("name1")).thenReturn(metadata1);
     when(configManager.getConfigurationMetadata("name2")).thenReturn(metadata2);
     when(configManager.getConfigurationMetadata("name3")).thenReturn(metadata3);
-
-    when(configData.getResourcePath()).thenReturn("/path");
 
     when(configManager.getConfiguration(context.currentResource(), "name1")).thenReturn(configData);
     ConfigurationCollectionData configCollectionData = mock(ConfigurationCollectionData.class);
@@ -84,19 +89,63 @@ public class ConfigNamesServletTest {
     context.registerService(ConfigurationManager.class, configManager);
     context.registerService(ConfigurationResourceResolver.class, configurationResourceResolver);
     context.registerInjectActivateService(new EditorConfig());
-    underTest = context.registerInjectActivateService(new ConfigNamesServlet());
   }
 
   @Test
-  public void testResponse() throws Exception {
+  void testResponse() throws Exception {
+    ConfigNamesServlet underTest = context.registerInjectActivateService(new ConfigNamesServlet());
     underTest.doGet(context.request(), context.response());
 
     assertEquals(HttpServletResponse.SC_OK, context.response().getStatus());
 
     String expectedJson = "{contextPath:'/context/path',configNames:["
-        + "{configName:'name1',label:'label1',description:'desc1',collection:false,exists:true},"
-        + "{configName:'name2',collection=true,exists:true},"
-        + "{configName:'name3',collection:false,exists:false}"
+        + "{configName:'name2',label:'A-label2',collection=true,exists:true,inherited:false,overridden:false,allowAdd:true},"
+        + "{configName:'name1',label:'B-label1',description:'desc1',collection:false,exists:false,inherited:false,overridden:false,allowAdd:true},"
+        + "{configName:'name3',label:'C-label3',collection:false,exists:false,inherited:false,overridden:false,allowAdd:true}"
+        + "]}";
+    JSONAssert.assertEquals(expectedJson, context.response().getOutputAsString(), true);
+  }
+
+  @Test
+  void testResponseWithInheritedOverriddenExists() throws Exception {
+
+    when(configData.getResourcePath()).thenReturn("/path");
+    when(configData.isInherited()).thenReturn(true);
+    when(configData.isOverridden()).thenReturn(true);
+
+    ConfigNamesServlet underTest = context.registerInjectActivateService(new ConfigNamesServlet());
+    underTest.doGet(context.request(), context.response());
+
+    assertEquals(HttpServletResponse.SC_OK, context.response().getStatus());
+
+    String expectedJson = "{contextPath:'/context/path',configNames:["
+        + "{configName:'name2',label:'A-label2',collection=true,exists:true,inherited:true,overridden:true,allowAdd:true},"
+        + "{configName:'name1',label:'B-label1',description:'desc1',collection:false,exists:true,inherited:true,overridden:true,allowAdd:true},"
+        + "{configName:'name3',label:'C-label3',collection:false,exists:false,inherited:false,overridden:false,allowAdd:true}"
+        + "]}";
+    JSONAssert.assertEquals(expectedJson, context.response().getOutputAsString(), true);
+  }
+
+  @Test
+  void testResponseWithFiltering() throws Exception {
+    context.registerService(ConfigurationEditorFilter.class, new ConfigurationEditorFilter() {
+      @Override
+      public boolean allowAdd(@NotNull String configName) {
+        return !StringUtils.equals(configName, "name3");
+      }
+    });
+    context.registerInjectActivateService(new ContextAwareServiceResolverImpl());
+    context.registerInjectActivateService(new ConfigurationEditorFilterService());
+    ConfigNamesServlet underTest = context.registerInjectActivateService(new ConfigNamesServlet());
+
+    underTest.doGet(context.request(), context.response());
+
+    assertEquals(HttpServletResponse.SC_OK, context.response().getStatus());
+
+    String expectedJson = "{contextPath:'/context/path',configNames:["
+        + "{configName:'name2',label:'A-label2',collection=true,exists:true,inherited:false,overridden:false,allowAdd:true},"
+        + "{configName:'name1',label:'B-label1',description:'desc1',collection:false,exists:false,inherited:false,overridden:false,allowAdd:true},"
+        + "{configName:'name3',label:'C-label3',collection:false,exists:false,inherited:false,overridden:false,allowAdd:false}"
         + "]}";
     JSONAssert.assertEquals(expectedJson, context.response().getOutputAsString(), true);
   }

@@ -38,9 +38,17 @@ When you are using AEM 6.1 or 6.2 you have to additionally deploy the Apache Sli
 See [Deploy and configure Context-Aware Configuration in AEM][deploy-configure-caconfig-in-aem] for details.
 
 
+### AEM Version Support Matrix
+
+|Context-Aware Configuration Compatibility Layer version |AEM version supported
+|--------------------------------------------------------|----------------------
+|1.1.x or higher                                         |AEM 6.3+
+|1.0.x                                                   |AEM 6.1+
+
+
 [apidocs]: apidocs/
 [changelog]: changes-report.html
-[config-deprecated]: http://wcm.io/config/
+[config-deprecated]: https://wcm.io/config/
 [caconfig-migration]: https://wcm-io.atlassian.net/wiki/x/BgCvAg
-[sling-caconfig]: http://sling.apache.org/documentation/bundles/context-aware-configuration/context-aware-configuration.html
-[deploy-configure-caconfig-in-aem]: http://wcm.io/caconfig/deploy-configure-caconfig-in-aem.html
+[sling-caconfig]: https://sling.apache.org/documentation/bundles/context-aware-configuration/context-aware-configuration.html
+[deploy-configure-caconfig-in-aem]: https://wcm.io/caconfig/deploy-configure-caconfig-in-aem.html

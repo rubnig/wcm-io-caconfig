@@ -51,6 +51,7 @@ import org.apache.sling.caconfig.spi.metadata.PropertyMetadata;
 import org.apache.sling.commons.json.JSONArray;
 import org.apache.sling.commons.json.JSONException;
 import org.apache.sling.commons.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -66,6 +67,7 @@ import org.slf4j.LoggerFactory;
     "sling.servlet.methods=POST",
     "sling.servlet.methods=DELETE"
 })
+@SuppressWarnings("deprecation")
 public class ConfigPersistServlet extends SlingAllMethodsServlet {
   private static final long serialVersionUID = 1L;
 
@@ -82,6 +84,7 @@ public class ConfigPersistServlet extends SlingAllMethodsServlet {
   private static Logger log = LoggerFactory.getLogger(ConfigPersistServlet.class);
 
   @Override
+  @SuppressWarnings({ "null", "PMD.GuardLogStatement" })
   protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response) throws ServletException, IOException {
     if (!editorConfig.isEnabled()) {
       sendForbiddenWithMessage(response, "Configuration editor is disabled.");
@@ -299,7 +302,8 @@ public class ConfigPersistServlet extends SlingAllMethodsServlet {
   }
 
   @Override
-  protected void doDelete(SlingHttpServletRequest request, SlingHttpServletResponse response) throws ServletException, IOException {
+  @SuppressWarnings("PMD.GuardLogStatement")
+  protected void doDelete(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
 
     // get parameters
     String configName = request.getParameter(RP_CONFIGNAME);

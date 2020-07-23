@@ -80,6 +80,7 @@ import io.wcm.config.core.impl.ParameterProviderBridge;
 },
     property = Constants.SERVICE_RANKING + ":Integer=2000")
 @Designate(ocd = ToolsConfigPagePersistenceProvider.Config.class)
+@SuppressWarnings("null")
 public final class ToolsConfigPagePersistenceProvider implements ConfigurationResourceResolvingStrategy,
     ConfigurationInheritanceStrategy, ConfigurationPersistenceStrategy2 {
 
@@ -415,9 +416,15 @@ public final class ToolsConfigPagePersistenceProvider implements ConfigurationRe
     }
 
     String parentPath = ResourceUtil.getParent(pagePath);
+    if (parentPath == null) {
+      throw new RuntimeException("No parent of resource: " + pagePath);
+    }
     String pageName = ResourceUtil.getName(pagePath);
     ensurePage(resourceResolver, ResourceUtil.getParent(pagePath), config.structurePageTemplate());
     Resource parentResource = resourceResolver.getResource(parentPath);
+    if (parentResource == null) {
+      throw new RuntimeException("No parent resource: " + parentPath);
+    }
     try {
       if (log.isTraceEnabled()) {
         log.trace("! Create cq:Page node at {}", pagePath);

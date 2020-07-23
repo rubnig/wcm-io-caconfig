@@ -19,16 +19,13 @@
  */
 package io.wcm.caconfig.extensions.references.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ValueMap;
@@ -37,12 +34,15 @@ import org.apache.sling.caconfig.management.ConfigurationManager;
 import org.apache.sling.caconfig.spi.ConfigurationMetadataProvider;
 import org.apache.sling.caconfig.spi.ConfigurationPersistData;
 import org.apache.sling.caconfig.spi.metadata.ConfigurationMetadata;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.day.cq.wcm.api.Page;
 import com.day.cq.wcm.api.reference.Reference;
 
-import io.wcm.testing.mock.aem.junit.AemContext;
+import io.wcm.testing.mock.aem.junit5.AemContext;
 
+@SuppressWarnings("null")
 final class TestUtils {
 
   private TestUtils() {
@@ -52,13 +52,16 @@ final class TestUtils {
   public static void applyConfig(AemContext context, Page page, String name, ValueMap props) {
     ConfigurationManager configManager = context.getService(ConfigurationManager.class);
     Resource contextResource = page.adaptTo(Resource.class);
+    if (contextResource == null) {
+      throw new RuntimeException("No page resource: " + page.getPath());
+    }
     configManager.persistConfiguration(contextResource, name, new ConfigurationPersistData(props));
   }
 
   public static void assetReferences(List<Reference> references, String... paths) {
-    assertEquals("number of references", paths.length, references.size());
+    assertEquals(paths.length, references.size(), "number of references");
     for (int i = 0; i < paths.length; i++) {
-      assertEquals("reference #" + i, paths[i], references.get(i).getResource().getPath());
+      assertEquals(paths[i], references.get(i).getResource().getPath(), "reference #" + i);
     }
   }
 
@@ -79,13 +82,13 @@ final class TestUtils {
       metadata.put(AnnotationClassParser.getConfigurationName(cls), AnnotationClassParser.buildConfigurationMetadata(cls));
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public SortedSet<String> getConfigurationNames() {
       return new TreeSet<>(metadata.keySet());
     }
 
-    @CheckForNull
+    @Nullable
     @Override
     public ConfigurationMetadata getConfigurationMetadata(String s) {
       return metadata.get(s);

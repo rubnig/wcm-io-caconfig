@@ -49,9 +49,10 @@ import io.wcm.config.spi.ConfigurationFinderStrategy;
     @Reference(service = ConfigurationFinderStrategy.class, cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC,
         name = "configurationFinderStrategy", bind = "bindConfigurationFinderStrategy", unbind = "unbindConfigurationFinderStrategy")
 })
+@SuppressWarnings("null")
 public class ConfigurationFinderStrategyBridge implements ContextPathStrategy {
 
-  private RankedServices<ConfigurationFinderStrategy> configurationFinderStrategies = new RankedServices<>(Order.ASCENDING);
+  private final RankedServices<ConfigurationFinderStrategy> configurationFinderStrategies = new RankedServices<>(Order.ASCENDING);
 
   @Reference
   private ApplicationFinder applicationFinder;
@@ -59,6 +60,7 @@ public class ConfigurationFinderStrategyBridge implements ContextPathStrategy {
   private static final Logger log = LoggerFactory.getLogger(ConfigurationFinderStrategyBridge.class);
 
   @Override
+  @SuppressWarnings("deprecation")
   public Iterator<ContextResource> findContextResources(Resource resource) {
     String applicationId = findApplicationId(resource);
     ResourceResolver resourceResolver = resource.getResourceResolver();
